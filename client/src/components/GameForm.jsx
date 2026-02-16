@@ -7,8 +7,7 @@ function GameForm({ onGameCreated }) {
   const { user, isAuthenticated } = useAuth()
   const [players, setPlayers] = useState([])
   const [player2Id, setPlayer2Id] = useState('')
-  const [player1Score, setPlayer1Score] = useState('')
-  const [player2Score, setPlayer2Score] = useState('')
+  const [sets, setSets] = useState([{ player1_score: '', player2_score: '' }])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [success, setSuccess] = useState(false)
@@ -26,6 +25,23 @@ function GameForm({ onGameCreated }) {
     }
   }
 
+  const handleSetScoreChange = (index, player, value) => {
+    const newSets = [...sets]
+    newSets[index][player] = value
+    setSets(newSets)
+  }
+
+  const addSet = () => {
+    setSets([...sets, { player1_score: '', player2_score: '' }])
+  }
+
+  const removeSet = (index) => {
+    if (sets.length > 1) {
+      const newSets = sets.filter((_, i) => i !== index)
+      setSets(newSets)
+    }
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError(null)
@@ -36,8 +52,8 @@ function GameForm({ onGameCreated }) {
       return
     }
 
-    if (!player2Id || player1Score === '' || player2Score === '') {
-      setError('Please fill in all fields')
+    if (!player2Id) {
+      setError('Please select an opponent')
       return
     }
 
@@ -46,8 +62,41 @@ function GameForm({ onGameCreated }) {
       return
     }
 
-    if (player1Score === player2Score) {
-      setError('Game cannot be a tie')
+    // Validate all sets have scores
+    for (let i = 0; i < sets.length; i++) {
+      if (sets[i].player1_score === '' || sets[i].player2_score === '') {
+        setError(`Please fill in scores for Set ${i + 1}`)
+        return
+      }
+    }
+
+    // Convert to numbers and validate
+    const parsedSets = sets.map(set => ({
+      player1_score: parseInt(set.player1_score),
+      player2_score: parseInt(set.player2_score)
+    }))
+
+    // Check for ties in sets
+    for (let i = 0; i < parsedSets.length; i++) {
+      if (parsedSets[i].player1_score === parsedSets[i].player2_score) {
+        setError(`Set ${i + 1} cannot be a tie`)
+        return
+      }
+    }
+
+    // Calculate sets won
+    let player1SetsWon = 0
+    let player2SetsWon = 0
+    parsedSets.forEach(set => {
+      if (set.player1_score > set.player2_score) {
+        player1SetsWon++
+      } else {
+        player2SetsWon++
+      }
+    })
+
+    if (player1SetsWon === player2SetsWon) {
+      setError('Match cannot be tied - one player must win more sets')
       return
     }
 
@@ -56,14 +105,12 @@ function GameForm({ onGameCreated }) {
       await gamesApi.create({
         player1_id: user.playerId,
         player2_id: parseInt(player2Id),
-        player1_score: parseInt(player1Score),
-        player2_score: parseInt(player2Score),
+        sets: parsedSets
       })
 
       setSuccess(true)
       setPlayer2Id('')
-      setPlayer1Score('')
-      setPlayer2Score('')
+      setSets([{ player1_score: '', player2_score: '' }])
 
       if (onGameCreated) {
         onGameCreated()
@@ -142,36 +189,70 @@ function GameForm({ onGameCreated }) {
           </div>
         </div>
 
-        <div className="form-row">
-          <div className="form-group">
-            <label className="form-label">Your Score</label>
-            <input
-              type="number"
-              min="0"
-              value={player1Score}
-              onChange={(e) => setPlayer1Score(e.target.value)}
-              className="form-input"
-              placeholder="0"
-            />
+        <div style={{ marginTop: 'var(--space-md)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-sm)' }}>
+            <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 600 }}>Sets</h3>
+            <button
+              type="button"
+              onClick={addSet}
+              className="btn btn-outline"
+              style={{ padding: '4px 12px', fontSize: '14px' }}
+            >
+              + Add Set
+            </button>
           </div>
 
-          <div className="form-group">
-            <label className="form-label">Opponent Score</label>
-            <input
-              type="number"
-              min="0"
-              value={player2Score}
-              onChange={(e) => setPlayer2Score(e.target.value)}
-              className="form-input"
-              placeholder="0"
-            />
-          </div>
+          {sets.map((set, index) => (
+            <div key={index} style={{ marginBottom: 'var(--space-sm)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
+                <span style={{ minWidth: '60px', fontSize: '14px', fontWeight: 500 }}>
+                  Set {index + 1}:
+                </span>
+                <div className="form-row" style={{ flex: 1, margin: 0 }}>
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <input
+                      type="number"
+                      min="0"
+                      value={set.player1_score}
+                      onChange={(e) => handleSetScoreChange(index, 'player1_score', e.target.value)}
+                      className="form-input"
+                      placeholder="Your score"
+                      style={{ textAlign: 'center' }}
+                    />
+                  </div>
+                  <span style={{ padding: '0 8px', fontSize: '18px', fontWeight: 600 }}>-</span>
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <input
+                      type="number"
+                      min="0"
+                      value={set.player2_score}
+                      onChange={(e) => handleSetScoreChange(index, 'player2_score', e.target.value)}
+                      className="form-input"
+                      placeholder="Opp score"
+                      style={{ textAlign: 'center' }}
+                    />
+                  </div>
+                </div>
+                {sets.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => removeSet(index)}
+                    className="btn btn-outline"
+                    style={{ padding: '4px 8px', fontSize: '14px', color: 'var(--red)' }}
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
         </div>
 
         <button
           type="submit"
           disabled={loading || opponents.length === 0}
           className="btn btn-dark full-width"
+          style={{ marginTop: 'var(--space-md)' }}
         >
           {loading ? 'Recording...' : 'Record Match'}
         </button>

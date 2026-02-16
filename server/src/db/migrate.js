@@ -1,5 +1,6 @@
 import { migrate as addUsers } from './migrations/001_add_users.js';
 import { migrate as fixGamesForeignKeys } from './migrations/002_fix_games_foreign_keys.js';
+import { migrate as addSetsToGames } from './migrations/003_add_sets_to_games.js';
 import db from './database.js';
 
 /**
@@ -29,7 +30,8 @@ export function runMigrations() {
   // Define migrations in order
   const migrations = [
     { name: '001_add_users', fn: addUsers },
-    { name: '002_fix_games_foreign_keys', fn: fixGamesForeignKeys }
+    { name: '002_fix_games_foreign_keys', fn: fixGamesForeignKeys },
+    { name: '003_add_sets_to_games', fn: addSetsToGames }
   ];
 
   // Run each migration if not already applied

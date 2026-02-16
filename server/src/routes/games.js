@@ -80,11 +80,15 @@ router.get('/:id', (req, res) => {
 // POST /api/games - Record a new game (requires authentication)
 router.post('/', requireAuth, (req, res) => {
   try {
-    const { player1_id, player2_id, player1_score, player2_score } = req.body;
+    const { player1_id, player2_id, sets } = req.body;
 
     // Validation
-    if (!player1_id || !player2_id || player1_score === undefined || player2_score === undefined) {
+    if (!player1_id || !player2_id) {
       return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    if (!sets || !Array.isArray(sets) || sets.length === 0) {
+      return res.status(400).json({ error: 'At least one set is required' });
     }
 
     if (player1_id === player2_id) {
@@ -103,13 +107,37 @@ router.post('/', requireAuth, (req, res) => {
       return res.status(403).json({ error: 'You can only record games that you participated in' });
     }
 
-    if (player1_score === player2_score) {
-      return res.status(400).json({ error: 'Game cannot be a tie' });
+    // Validate sets and calculate winner
+    let player1SetsWon = 0;
+    let player2SetsWon = 0;
+
+    for (const set of sets) {
+      if (!set.player1_score || !set.player2_score) {
+        return res.status(400).json({ error: 'Each set must have scores for both players' });
+      }
+
+      if (set.player1_score < 0 || set.player2_score < 0) {
+        return res.status(400).json({ error: 'Set scores must be positive' });
+      }
+
+      if (set.player1_score === set.player2_score) {
+        return res.status(400).json({ error: 'Sets cannot be tied' });
+      }
+
+      if (set.player1_score > set.player2_score) {
+        player1SetsWon++;
+      } else {
+        player2SetsWon++;
+      }
     }
 
-    if (player1_score < 0 || player2_score < 0) {
-      return res.status(400).json({ error: 'Scores must be positive' });
+    // Ensure there's a winner
+    if (player1SetsWon === player2SetsWon) {
+      return res.status(400).json({ error: 'Match cannot be tied - one player must win more sets' });
     }
+
+    const player1_score = player1SetsWon;
+    const player2_score = player2SetsWon;
 
     // Get current player ELOs
     const player1 = db.prepare('SELECT * FROM players WHERE id = ?').get(player1_id);
@@ -140,15 +168,17 @@ router.post('/', requireAuth, (req, res) => {
           winner_id,
           player1_elo_before, player2_elo_before,
           player1_elo_after, player2_elo_after,
-          elo_change
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          elo_change,
+          sets
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).run(
         player1_id, player2_id,
         player1_score, player2_score,
         winner_id,
         player1.current_elo, player2.current_elo,
         player1_elo_after, player2_elo_after,
-        elo_change
+        elo_change,
+        JSON.stringify(sets)
       );
 
       // Update player1
