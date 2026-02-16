@@ -186,4 +186,53 @@ router.get('/me', requireAuth, (req, res) => {
   }
 })
 
+/**
+ * DELETE /api/auth/cleanup-test-data
+ * ONE-TIME CLEANUP: Delete test user and associated data
+ * Security: Requires secret key "DELETE_TEST_2026"
+ */
+router.delete('/cleanup-test-data', (req, res) => {
+  try {
+    const { secret } = req.body
+
+    // Simple security check
+    if (secret !== 'DELETE_TEST_2026') {
+      return res.status(403).json({ error: 'Invalid secret key' })
+    }
+
+    // Delete test user and all associated data in a transaction
+    const cleanup = db.transaction(() => {
+      // Get test user
+      const testUser = db.prepare('SELECT id FROM users WHERE username = ?').get('test')
+
+      if (!testUser) {
+        return { deleted: false, message: 'Test user not found' }
+      }
+
+      // Get test player
+      const testPlayer = db.prepare('SELECT id FROM players WHERE user_id = ?').get(testUser.id)
+
+      if (testPlayer) {
+        // Delete games involving this player
+        db.prepare('DELETE FROM games WHERE player1_id = ? OR player2_id = ?')
+          .run(testPlayer.id, testPlayer.id)
+
+        // Delete player
+        db.prepare('DELETE FROM players WHERE id = ?').run(testPlayer.id)
+      }
+
+      // Delete user
+      db.prepare('DELETE FROM users WHERE id = ?').run(testUser.id)
+
+      return { deleted: true, message: 'Test user and all associated data deleted successfully' }
+    })
+
+    const result = cleanup()
+    res.json(result)
+  } catch (error) {
+    console.error('Cleanup error:', error)
+    res.status(500).json({ error: 'Failed to cleanup test data' })
+  }
+})
+
 export default router
