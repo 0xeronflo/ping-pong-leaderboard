@@ -24,6 +24,7 @@ router.get('/', (req, res) => {
         g.player1_elo_after,
         g.player2_elo_after,
         g.elo_change,
+        g.sets,
         g.played_at,
         p1.name as player1_name,
         p2.name as player2_name,

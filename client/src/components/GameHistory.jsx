@@ -83,8 +83,20 @@ function GameHistory() {
             <div className="history-details">
               <div className="history-score">
                 <span className="score-pill">
-                  {game.player1_score} - {game.player2_score}
+                  {game.player1_score} - {game.player2_score} sets
                 </span>
+                {game.sets && (() => {
+                  const parsedSets = JSON.parse(game.sets)
+                  return (
+                    <div className="set-scores">
+                      {parsedSets.map((set, i) => (
+                        <span key={i} className="set-score-pill">
+                          {set.player1_score}–{set.player2_score}
+                        </span>
+                      ))}
+                    </div>
+                  )
+                })()}
               </div>
 
               <div className="elo-changes">

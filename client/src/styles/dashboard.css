@@ -787,6 +787,26 @@
 .history-score {
   display: flex;
   align-items: center;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+.set-scores {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.set-score-pill {
+  display: inline-block;
+  background: var(--bg-body);
+  border: 1px solid var(--border);
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
 }
 
 .elo-changes {
