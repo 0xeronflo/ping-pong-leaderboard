@@ -187,6 +187,46 @@ router.get('/me', requireAuth, (req, res) => {
 })
 
 /**
+ * PATCH /api/auth/me
+ * Update current user's player name
+ */
+router.patch('/me', requireAuth, (req, res) => {
+  try {
+    const { playerName } = req.body
+
+    if (!playerName) {
+      return res.status(400).json({ error: 'Player name is required' })
+    }
+
+    if (playerName.length < 2 || playerName.length > 100) {
+      return res.status(400).json({ error: 'Player name must be between 2 and 100 characters' })
+    }
+
+    // Check if name is taken by another player
+    const existing = db.prepare('SELECT id FROM players WHERE name = ? AND user_id != ?').get(playerName, req.user.id)
+    if (existing) {
+      return res.status(400).json({ error: 'Player name already taken' })
+    }
+
+    db.prepare('UPDATE players SET name = ? WHERE user_id = ?').run(playerName, req.user.id)
+
+    const player = db.prepare('SELECT id, name FROM players WHERE user_id = ?').get(req.user.id)
+
+    res.json({
+      user: {
+        id: req.user.id,
+        username: req.user.username,
+        playerId: player?.id || null,
+        playerName: player?.name || null,
+      },
+    })
+  } catch (error) {
+    console.error('Update player name error:', error)
+    res.status(500).json({ error: 'Failed to update player name' })
+  }
+})
+
+/**
  * DELETE /api/auth/cleanup-test-data
  * ONE-TIME CLEANUP: Delete test user and associated data
  * Security: Requires secret key "DELETE_TEST_2026"

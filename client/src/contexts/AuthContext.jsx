@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react'
+import { authApi } from '../services/api'
 
 const AuthContext = createContext(null)
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api'
@@ -81,12 +82,19 @@ export function AuthProvider({ children }) {
     }
   }
 
+  const updatePlayerName = async (playerName) => {
+    const data = await authApi.updatePlayerName(playerName)
+    setUser(data.user)
+    return data.user
+  }
+
   const value = {
     user,
     loading,
     register,
     login,
     logout,
+    updatePlayerName,
     isAuthenticated: !!user,
   }
 

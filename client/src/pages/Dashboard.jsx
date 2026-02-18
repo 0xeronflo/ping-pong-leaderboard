@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { playersApi, gamesApi } from '../services/api'
+import { useAuth } from '../contexts/AuthContext'
 import GameForm from '../components/GameForm'
 import GameHistory from '../components/GameHistory'
 import PlayerStats from '../components/PlayerStats'
@@ -7,10 +8,34 @@ import EloChart from '../components/EloChart'
 import '../styles/dashboard.css'
 
 function Dashboard() {
+  const { user, isAuthenticated, updatePlayerName, logout } = useAuth()
   const [players, setPlayers] = useState([])
   const [selectedPlayerId, setSelectedPlayerId] = useState(null)
   const [refreshKey, setRefreshKey] = useState(0)
   const [loading, setLoading] = useState(true)
+  const [newPlayerName, setNewPlayerName] = useState('')
+  const [nameChangeError, setNameChangeError] = useState(null)
+  const [nameChangeSuccess, setNameChangeSuccess] = useState(false)
+  const [nameChanging, setNameChanging] = useState(false)
+
+  const handleNameChange = async (e) => {
+    e.preventDefault()
+    setNameChangeError(null)
+    setNameChangeSuccess(false)
+    if (!newPlayerName.trim()) return
+    try {
+      setNameChanging(true)
+      await updatePlayerName(newPlayerName.trim())
+      setNewPlayerName('')
+      setNameChangeSuccess(true)
+      fetchData()
+      setTimeout(() => setNameChangeSuccess(false), 3000)
+    } catch (err) {
+      setNameChangeError(err.message)
+    } finally {
+      setNameChanging(false)
+    }
+  }
 
   useEffect(() => {
     fetchData()
@@ -127,6 +152,58 @@ function Dashboard() {
         <h2 className="section-title">Match History</h2>
         <GameHistory key={`history-${refreshKey}`} />
       </section>
+
+      {/* 5. ACCOUNT SETTINGS */}
+      {isAuthenticated && (
+        <section className="section">
+          <h2 className="section-title">Account</h2>
+          <div className="card">
+            <div style={{ marginBottom: 'var(--space-md)', fontSize: '14px', color: 'var(--text-secondary)' }}>
+              Logged in as <strong style={{ color: 'var(--text-primary)' }}>{user?.username}</strong>
+              {' · '}Player name: <strong style={{ color: 'var(--text-primary)' }}>{user?.playerName}</strong>
+            </div>
+
+            <form onSubmit={handleNameChange} style={{ display: 'flex', gap: 'var(--space-sm)', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+              <div style={{ flex: 1, minWidth: '200px' }}>
+                <input
+                  type="text"
+                  value={newPlayerName}
+                  onChange={(e) => setNewPlayerName(e.target.value)}
+                  placeholder="New player name"
+                  className="form-input"
+                  style={{ margin: 0 }}
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={nameChanging || !newPlayerName.trim()}
+                className="btn btn-outline"
+              >
+                {nameChanging ? 'Saving...' : 'Change Name'}
+              </button>
+              <button
+                type="button"
+                onClick={logout}
+                className="btn btn-outline"
+                style={{ color: 'var(--red)' }}
+              >
+                Log Out
+              </button>
+            </form>
+
+            {nameChangeError && (
+              <div className="alert alert-error" style={{ marginTop: 'var(--space-sm)' }}>
+                {nameChangeError}
+              </div>
+            )}
+            {nameChangeSuccess && (
+              <div className="alert alert-success" style={{ marginTop: 'var(--space-sm)' }}>
+                Player name updated successfully!
+              </div>
+            )}
+          </div>
+        </section>
+      )}
 
       {/* 4. PLAYER STATISTICS */}
       {players.length > 0 && (

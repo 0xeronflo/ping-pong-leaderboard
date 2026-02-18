@@ -31,6 +31,14 @@ export const playersApi = {
   }),
 };
 
+// Auth API
+export const authApi = {
+  updatePlayerName: (playerName) => apiCall('/auth/me', {
+    method: 'PATCH',
+    body: JSON.stringify({ playerName }),
+  }),
+};
+
 // Games API
 export const gamesApi = {
   getAll: (limit = 50, offset = 0) => apiCall(`/games?limit=${limit}&offset=${offset}`),
