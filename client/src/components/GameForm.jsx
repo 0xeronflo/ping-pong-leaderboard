@@ -190,7 +190,7 @@ function GameForm({ onGameCreated }) {
         </div>
 
         <div style={{ marginTop: 'var(--space-md)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-sm)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-md)' }}>
             <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 600 }}>Sets</h3>
             <button
               type="button"
@@ -202,43 +202,89 @@ function GameForm({ onGameCreated }) {
             </button>
           </div>
 
+          {/* Player name column headers */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: '56px 1fr 40px 1fr 40px',
+            gap: '8px',
+            paddingBottom: 'var(--space-xs)',
+            marginBottom: 'var(--space-xs)',
+            borderBottom: '1px solid var(--border-light)'
+          }}>
+            <div />
+            <span style={{
+              fontSize: '12px',
+              fontWeight: 600,
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+              color: 'var(--text-main)',
+              textAlign: 'center',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap'
+            }}>
+              {currentPlayer?.name || 'You'}
+            </span>
+            <div />
+            <span style={{
+              fontSize: '12px',
+              fontWeight: 600,
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+              color: 'var(--text-main)',
+              textAlign: 'center',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap'
+            }}>
+              {player2Id ? opponents.find(p => p.id === parseInt(player2Id))?.name || 'Opponent' : 'Opponent'}
+            </span>
+            <div />
+          </div>
+
           {sets.map((set, index) => (
-            <div key={index} style={{ marginBottom: 'var(--space-sm)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
-                <span style={{ minWidth: '60px', fontSize: '14px', fontWeight: 500 }}>
-                  Set {index + 1}:
-                </span>
-                <div className="form-row" style={{ flex: 1, margin: 0 }}>
-                  <div className="form-group" style={{ margin: 0 }}>
-                    <input
-                      type="number"
-                      min="0"
-                      value={set.player1_score}
-                      onChange={(e) => handleSetScoreChange(index, 'player1_score', e.target.value)}
-                      className="form-input"
-                      placeholder="Your score"
-                      style={{ textAlign: 'center' }}
-                    />
-                  </div>
-                  <span style={{ padding: '0 8px', fontSize: '18px', fontWeight: 600 }}>-</span>
-                  <div className="form-group" style={{ margin: 0 }}>
-                    <input
-                      type="number"
-                      min="0"
-                      value={set.player2_score}
-                      onChange={(e) => handleSetScoreChange(index, 'player2_score', e.target.value)}
-                      className="form-input"
-                      placeholder="Opp score"
-                      style={{ textAlign: 'center' }}
-                    />
-                  </div>
-                </div>
+            <div key={index} style={{
+              display: 'grid',
+              gridTemplateColumns: '56px 1fr 40px 1fr 40px',
+              gap: '8px',
+              alignItems: 'center',
+              background: 'var(--bg-body)',
+              border: '1px solid var(--border-light)',
+              borderRadius: 'var(--radius-md)',
+              padding: '12px',
+              marginBottom: '8px'
+            }}>
+              <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
+                Set {index + 1}
+              </span>
+              <input
+                type="number"
+                min="0"
+                value={set.player1_score}
+                onChange={(e) => handleSetScoreChange(index, 'player1_score', e.target.value)}
+                className="form-input"
+                placeholder="0"
+                style={{ textAlign: 'center' }}
+              />
+              <span style={{ textAlign: 'center', fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>
+                vs
+              </span>
+              <input
+                type="number"
+                min="0"
+                value={set.player2_score}
+                onChange={(e) => handleSetScoreChange(index, 'player2_score', e.target.value)}
+                className="form-input"
+                placeholder="0"
+                style={{ textAlign: 'center' }}
+              />
+              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                 {sets.length > 1 && (
                   <button
                     type="button"
                     onClick={() => removeSet(index)}
                     className="btn btn-outline"
-                    style={{ padding: '4px 8px', fontSize: '14px', color: 'var(--red)' }}
+                    style={{ padding: '4px 8px', fontSize: '14px', color: 'var(--text-secondary)' }}
                   >
                     ×
                   </button>
