@@ -3,6 +3,7 @@ import { migrate as fixGamesForeignKeys } from './migrations/002_fix_games_forei
 import { migrate as addSetsToGames } from './migrations/003_add_sets_to_games.js';
 import { migrate as recalculateEloSetsWeighting } from './migrations/004_recalculate_elo_sets_weighting.js';
 import { migrate as mergeAsianmartyCobraGames } from './migrations/005_merge_asianmarty_cobra_games.js';
+import { migrate as recalculateEloPointDifferential } from './migrations/006_recalculate_elo_point_differential.js';
 import db from './database.js';
 
 /**
@@ -35,7 +36,8 @@ export function runMigrations() {
     { name: '002_fix_games_foreign_keys', fn: fixGamesForeignKeys },
     { name: '003_add_sets_to_games', fn: addSetsToGames },
     { name: '004_recalculate_elo_sets_weighting', fn: recalculateEloSetsWeighting },
-    { name: '005_merge_asianmarty_cobra_games', fn: mergeAsianmartyCobraGames }
+    { name: '005_merge_asianmarty_cobra_games', fn: mergeAsianmartyCobraGames },
+    { name: '006_recalculate_elo_point_differential', fn: recalculateEloPointDifferential }
   ];
 
   // Run each migration if not already applied

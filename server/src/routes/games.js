@@ -153,8 +153,8 @@ router.post('/', requireAuth, (req, res) => {
     const winner_elo = player1_score > player2_score ? player1.current_elo : player2.current_elo;
     const loser_elo = player1_score > player2_score ? player2.current_elo : player1.current_elo;
 
-    // Calculate new ELOs, weighted by total sets played
-    const { winner_new_elo, loser_new_elo, elo_change } = calculateEloChange(winner_elo, loser_elo, sets.length);
+    // Calculate new ELOs, weighted by sets played and point differential
+    const { winner_new_elo, loser_new_elo, elo_change } = calculateEloChange(winner_elo, loser_elo, sets);
 
     const player1_elo_after = player1_score > player2_score ? winner_new_elo : loser_new_elo;
     const player2_elo_after = player1_score > player2_score ? loser_new_elo : winner_new_elo;

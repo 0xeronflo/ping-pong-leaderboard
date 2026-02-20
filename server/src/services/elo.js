@@ -9,9 +9,12 @@
 const K_FACTOR = 32;
 const INITIAL_RATING = 1500;
 
-// A 3-set match (e.g. 2-1) is treated as the baseline for full K.
-// Shorter matches have proportionally less ELO impact; longer matches have more.
+// A 3-set match (e.g. 2-1) is the baseline for the sets multiplier.
 const REFERENCE_SETS = 3;
+
+// Average point differential per set at which the diff multiplier equals 1.0.
+// Games with a larger average diff get a boost (up to 1.5x); smaller diff gets reduced.
+const REFERENCE_DIFF = 5;
 
 /**
  * Calculate expected score for a player
@@ -28,7 +31,7 @@ function calculateExpectedScore(playerElo, opponentElo) {
  * @param {number} currentElo - Current ELO rating
  * @param {number} expectedScore - Expected score (0 to 1)
  * @param {number} actualScore - Actual score (1 for win, 0 for loss)
- * @param {number} effectiveK - K-factor scaled by sets played
+ * @param {number} effectiveK - Scaled K-factor
  * @returns {number} New ELO rating
  */
 function calculateNewElo(currentElo, expectedScore, actualScore, effectiveK) {
@@ -37,15 +40,29 @@ function calculateNewElo(currentElo, expectedScore, actualScore, effectiveK) {
 
 /**
  * Calculate ELO changes for both players after a game.
- * The K-factor is scaled linearly by total sets played relative to REFERENCE_SETS,
- * so a 1-set match has less ELO impact than a 5-set match.
+ *
+ * The K-factor is scaled by two independent multipliers:
+ *   - Sets multiplier:  totalSets / REFERENCE_SETS  (more sets = more impact)
+ *   - Diff multiplier:  min(1.5, avgPointDiffPerSet / REFERENCE_DIFF)
+ *                       (larger margins = more impact, capped at 1.5×)
+ *
+ * Baseline (K = 32 exactly): 3 sets with an average 5-point margin per set.
+ *
  * @param {number} winner_elo - Current ELO of winner
- * @param {number} loser_elo - Current ELO of loser
- * @param {number} totalSets - Total sets played in the match
+ * @param {number} loser_elo  - Current ELO of loser
+ * @param {Array}  sets       - Array of { player1_score, player2_score } objects
  * @returns {object} Object with new ratings and change amount
  */
-export function calculateEloChange(winner_elo, loser_elo, totalSets = REFERENCE_SETS) {
-  const effectiveK = K_FACTOR * (totalSets / REFERENCE_SETS);
+export function calculateEloChange(winner_elo, loser_elo, sets = []) {
+  const totalSets = sets.length > 0 ? sets.length : REFERENCE_SETS;
+
+  const avgDiff = sets.length > 0
+    ? sets.reduce((sum, s) => sum + Math.abs(s.player1_score - s.player2_score), 0) / sets.length
+    : REFERENCE_DIFF;
+
+  const setsMultiplier = totalSets / REFERENCE_SETS;
+  const diffMultiplier = Math.min(1.5, avgDiff / REFERENCE_DIFF);
+  const effectiveK = K_FACTOR * setsMultiplier * diffMultiplier;
 
   const winnerExpected = calculateExpectedScore(winner_elo, loser_elo);
   const loserExpected = calculateExpectedScore(loser_elo, winner_elo);
