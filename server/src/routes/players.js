@@ -21,7 +21,7 @@ router.get('/', (req, res) => {
         END as win_rate,
         created_at
       FROM players
-      ORDER BY current_elo DESC
+      ORDER BY CASE WHEN games_played = 0 THEN 1 ELSE 0 END ASC, current_elo DESC
     `).all();
 
     res.json(players);
