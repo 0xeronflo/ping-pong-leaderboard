@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react'
 import { gamesApi } from '../services/api'
 
+const PAGE_SIZE = 10
+
 function GameHistory() {
   const [games, setGames] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [page, setPage] = useState(0)
 
   const fetchGames = async () => {
     try {
@@ -62,10 +65,13 @@ function GameHistory() {
     )
   }
 
+  const totalPages = Math.ceil(games.length / PAGE_SIZE)
+  const pageGames = games.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
+
   return (
     <div className="card">
       <div className="match-list">
-        {games.slice(0, 15).map((game) => (
+        {pageGames.map((game) => (
           <div key={game.id} className="history-item">
             <div className="history-header">
               <div className="history-players">
@@ -123,6 +129,30 @@ function GameHistory() {
           </div>
         ))}
       </div>
+
+      {totalPages > 1 && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 'var(--space-md)', paddingTop: 'var(--space-md)', borderTop: '1px solid var(--border-light)' }}>
+          <button
+            className="btn btn-outline"
+            onClick={() => setPage(p => p - 1)}
+            disabled={page === 0}
+            style={{ padding: '6px 16px', fontSize: '13px' }}
+          >
+            ← Previous
+          </button>
+          <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+            Page {page + 1} of {totalPages}
+          </span>
+          <button
+            className="btn btn-outline"
+            onClick={() => setPage(p => p + 1)}
+            disabled={page === totalPages - 1}
+            style={{ padding: '6px 16px', fontSize: '13px' }}
+          >
+            Next →
+          </button>
+        </div>
+      )}
     </div>
   )
 }

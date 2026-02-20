@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react'
 import { playersApi } from '../services/api'
 
+const PAGE_SIZE = 10
+
 function Leaderboard() {
   const [players, setPlayers] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [page, setPage] = useState(0)
 
   const fetchPlayers = async () => {
     try {
@@ -58,6 +61,9 @@ function Leaderboard() {
     return rank
   }
 
+  const totalPages = Math.ceil(players.length / PAGE_SIZE)
+  const pagePlayers = players.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
+
   return (
     <div className="card">
       <h2>Current Rankings</h2>
@@ -73,8 +79,8 @@ function Leaderboard() {
         </div>
 
         <div className="leaderboard-table-body">
-          {players.map((player, index) => {
-            const rank = index + 1
+          {pagePlayers.map((player, index) => {
+            const rank = page * PAGE_SIZE + index + 1
             return (
               <div key={player.id} className={`leaderboard-row ${rank <= 3 ? 'top-three' : ''}`}>
                 <div className="col-rank">
@@ -110,6 +116,30 @@ function Leaderboard() {
           })}
         </div>
       </div>
+
+      {totalPages > 1 && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 'var(--space-md)', paddingTop: 'var(--space-md)', borderTop: '1px solid var(--border-light)' }}>
+          <button
+            className="btn btn-outline"
+            onClick={() => setPage(p => p - 1)}
+            disabled={page === 0}
+            style={{ padding: '6px 16px', fontSize: '13px' }}
+          >
+            ← Previous
+          </button>
+          <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+            Page {page + 1} of {totalPages}
+          </span>
+          <button
+            className="btn btn-outline"
+            onClick={() => setPage(p => p + 1)}
+            disabled={page === totalPages - 1}
+            style={{ padding: '6px 16px', fontSize: '13px' }}
+          >
+            Next →
+          </button>
+        </div>
+      )}
     </div>
   )
 }
