@@ -9,6 +9,10 @@
 const K_FACTOR = 32;
 const INITIAL_RATING = 1500;
 
+// A 3-set match (e.g. 2-1) is treated as the baseline for full K.
+// Shorter matches have proportionally less ELO impact; longer matches have more.
+const REFERENCE_SETS = 3;
+
 /**
  * Calculate expected score for a player
  * @param {number} playerElo - Current ELO rating of the player
@@ -24,24 +28,30 @@ function calculateExpectedScore(playerElo, opponentElo) {
  * @param {number} currentElo - Current ELO rating
  * @param {number} expectedScore - Expected score (0 to 1)
  * @param {number} actualScore - Actual score (1 for win, 0 for loss)
+ * @param {number} effectiveK - K-factor scaled by sets played
  * @returns {number} New ELO rating
  */
-function calculateNewElo(currentElo, expectedScore, actualScore) {
-  return currentElo + K_FACTOR * (actualScore - expectedScore);
+function calculateNewElo(currentElo, expectedScore, actualScore, effectiveK) {
+  return currentElo + effectiveK * (actualScore - expectedScore);
 }
 
 /**
- * Calculate ELO changes for both players after a game
+ * Calculate ELO changes for both players after a game.
+ * The K-factor is scaled linearly by total sets played relative to REFERENCE_SETS,
+ * so a 1-set match has less ELO impact than a 5-set match.
  * @param {number} winner_elo - Current ELO of winner
  * @param {number} loser_elo - Current ELO of loser
+ * @param {number} totalSets - Total sets played in the match
  * @returns {object} Object with new ratings and change amount
  */
-export function calculateEloChange(winner_elo, loser_elo) {
+export function calculateEloChange(winner_elo, loser_elo, totalSets = REFERENCE_SETS) {
+  const effectiveK = K_FACTOR * (totalSets / REFERENCE_SETS);
+
   const winnerExpected = calculateExpectedScore(winner_elo, loser_elo);
   const loserExpected = calculateExpectedScore(loser_elo, winner_elo);
 
-  const winnerNewElo = calculateNewElo(winner_elo, winnerExpected, 1);
-  const loserNewElo = calculateNewElo(loser_elo, loserExpected, 0);
+  const winnerNewElo = calculateNewElo(winner_elo, winnerExpected, 1, effectiveK);
+  const loserNewElo = calculateNewElo(loser_elo, loserExpected, 0, effectiveK);
 
   const eloChange = Math.round((winnerNewElo - winner_elo) * 10) / 10;
 
