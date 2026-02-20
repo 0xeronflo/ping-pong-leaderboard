@@ -1,6 +1,7 @@
 import { migrate as addUsers } from './migrations/001_add_users.js';
 import { migrate as fixGamesForeignKeys } from './migrations/002_fix_games_foreign_keys.js';
 import { migrate as addSetsToGames } from './migrations/003_add_sets_to_games.js';
+import { migrate as recalculateEloSetsWeighting } from './migrations/004_recalculate_elo_sets_weighting.js';
 import db from './database.js';
 
 /**
@@ -31,7 +32,8 @@ export function runMigrations() {
   const migrations = [
     { name: '001_add_users', fn: addUsers },
     { name: '002_fix_games_foreign_keys', fn: fixGamesForeignKeys },
-    { name: '003_add_sets_to_games', fn: addSetsToGames }
+    { name: '003_add_sets_to_games', fn: addSetsToGames },
+    { name: '004_recalculate_elo_sets_weighting', fn: recalculateEloSetsWeighting }
   ];
 
   // Run each migration if not already applied
