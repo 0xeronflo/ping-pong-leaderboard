@@ -37,6 +37,10 @@ export const authApi = {
     method: 'PATCH',
     body: JSON.stringify({ playerName }),
   }),
+  changePassword: (currentPassword, newPassword) => apiCall('/auth/password', {
+    method: 'PUT',
+    body: JSON.stringify({ currentPassword, newPassword }),
+  }),
 };
 
 // Games API

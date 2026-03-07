@@ -6,6 +6,7 @@ import Players from './pages/Players'
 import Statistics from './pages/Statistics'
 import Login from './pages/Login'
 import Register from './pages/Register'
+import Account from './pages/Account'
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
         <Route path="/" element={<Dashboard />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/account" element={<Account />} />
         <Route path="/game-entry" element={<Home />} />
         <Route path="/players" element={<Players />} />
         <Route path="/statistics" element={<Statistics />} />

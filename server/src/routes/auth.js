@@ -227,6 +227,39 @@ router.patch('/me', requireAuth, (req, res) => {
 })
 
 /**
+ * PUT /api/auth/password
+ * Change current user's password
+ */
+router.put('/password', requireAuth, async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ error: 'Current password and new password are required' })
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ error: 'New password must be at least 6 characters' })
+    }
+
+    const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.user.id)
+    const isValid = await comparePassword(currentPassword, user.password_hash)
+
+    if (!isValid) {
+      return res.status(401).json({ error: 'Current password is incorrect' })
+    }
+
+    const newHash = await hashPassword(newPassword)
+    db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(newHash, req.user.id)
+
+    res.json({ message: 'Password updated successfully' })
+  } catch (error) {
+    console.error('Change password error:', error)
+    res.status(500).json({ error: 'Failed to change password' })
+  }
+})
+
+/**
  * DELETE /api/auth/cleanup-test-data
  * ONE-TIME CLEANUP: Delete test user and associated data
  * Security: Requires secret key "DELETE_TEST_2026"
