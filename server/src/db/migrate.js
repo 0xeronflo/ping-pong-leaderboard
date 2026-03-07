@@ -4,6 +4,7 @@ import { migrate as addSetsToGames } from './migrations/003_add_sets_to_games.js
 import { migrate as recalculateEloSetsWeighting } from './migrations/004_recalculate_elo_sets_weighting.js';
 import { migrate as mergeAsianmartyCobraGames } from './migrations/005_merge_asianmarty_cobra_games.js';
 import { migrate as recalculateEloPointDifferential } from './migrations/006_recalculate_elo_point_differential.js';
+import { migrate as addChallenges } from './migrations/007_add_challenges.js';
 import db from './database.js';
 
 /**
@@ -37,7 +38,8 @@ export function runMigrations() {
     { name: '003_add_sets_to_games', fn: addSetsToGames },
     { name: '004_recalculate_elo_sets_weighting', fn: recalculateEloSetsWeighting },
     { name: '005_merge_asianmarty_cobra_games', fn: mergeAsianmartyCobraGames },
-    { name: '006_recalculate_elo_point_differential', fn: recalculateEloPointDifferential }
+    { name: '006_recalculate_elo_point_differential', fn: recalculateEloPointDifferential },
+    { name: '007_add_challenges', fn: addChallenges }
   ];
 
   // Run each migration if not already applied

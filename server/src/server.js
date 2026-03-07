@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
 import playersRouter from './routes/players.js';
 import gamesRouter from './routes/games.js';
+import challengesRouter from './routes/challenges.js';
 import authRouter from './routes/auth.js';
 import { runMigrations } from './db/migrate.js';
 
@@ -53,6 +54,7 @@ app.get('/health', (req, res) => {
 app.use('/api/auth', authRouter);
 app.use('/api/players', playersRouter);
 app.use('/api/games', gamesRouter);
+app.use('/api/challenges', challengesRouter);
 
 // 404 handler
 app.use((req, res) => {

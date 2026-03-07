@@ -1236,3 +1236,52 @@
     font-size: 24px;
   }
 }
+
+/* Challenges */
+.challenge-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: var(--radius-pill);
+  background: #EF4444;
+  color: #FFF;
+  font-size: 12px;
+  font-weight: 600;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+
+.challenge-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm);
+  background: var(--bg-body);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+}
+
+.challenge-time {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-left: var(--space-xs);
+}
+
+@media (max-width: 600px) {
+  .challenge-item {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-xs);
+  }
+
+  .challenge-item > div:last-child {
+    justify-content: stretch;
+  }
+
+  .challenge-item .btn {
+    flex: 1;
+  }
+}

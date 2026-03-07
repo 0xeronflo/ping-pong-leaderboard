@@ -6,6 +6,7 @@ import GameForm from '../components/GameForm'
 import GameHistory from '../components/GameHistory'
 import PlayerStats from '../components/PlayerStats'
 import EloChart from '../components/EloChart'
+import ChallengePanel from '../components/ChallengePanel'
 import '../styles/dashboard.css'
 
 function Dashboard() {
@@ -14,6 +15,7 @@ function Dashboard() {
   const [selectedPlayerId, setSelectedPlayerId] = useState(null)
   const [refreshKey, setRefreshKey] = useState(0)
   const [loading, setLoading] = useState(true)
+  const [pendingChallengeCount, setPendingChallengeCount] = useState(0)
 
   useEffect(() => {
     fetchData()
@@ -69,6 +71,19 @@ function Dashboard() {
           </nav>
         )}
       </header>
+
+      {/* 0. CHALLENGES */}
+      {isAuthenticated && (
+        <section className="section">
+          <h2 className="section-title">
+            Challenges
+            {pendingChallengeCount > 0 && (
+              <span className="challenge-badge">{pendingChallengeCount}</span>
+            )}
+          </h2>
+          <ChallengePanel onChallengeCountChange={setPendingChallengeCount} />
+        </section>
+      )}
 
       {/* 1. GAME ENTRY */}
       <section className="section">

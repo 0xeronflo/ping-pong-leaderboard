@@ -43,6 +43,19 @@ export const authApi = {
   }),
 };
 
+// Challenges API
+export const challengesApi = {
+  getAll: () => apiCall('/challenges'),
+  create: (opponent_id) => apiCall('/challenges', {
+    method: 'POST',
+    body: JSON.stringify({ opponent_id }),
+  }),
+  respond: (id, action) => apiCall(`/challenges/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ action }),
+  }),
+};
+
 // Games API
 export const gamesApi = {
   getAll: (limit = 50, offset = 0) => apiCall(`/games?limit=${limit}&offset=${offset}`),
