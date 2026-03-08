@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
-import { playersApi } from '../services/api'
+import { playersApi, challengesApi } from '../services/api'
 import { useAuth } from '../contexts/AuthContext'
 import GameForm from '../components/GameForm'
 import GameHistory from '../components/GameHistory'
@@ -16,10 +16,30 @@ function Dashboard() {
   const [refreshKey, setRefreshKey] = useState(0)
   const [loading, setLoading] = useState(true)
   const [pendingChallengeCount, setPendingChallengeCount] = useState(0)
+  const [activeTab, setActiveTab] = useState('leaderboard')
+  const [showGameForm, setShowGameForm] = useState(false)
+
+  // Poll challenge count even when not on challenges tab
+  const fetchChallengeCount = useCallback(async () => {
+    if (!isAuthenticated) return
+    try {
+      const data = await challengesApi.getAll()
+      setPendingChallengeCount(data.received.length)
+    } catch (err) {
+      // silently ignore
+    }
+  }, [isAuthenticated])
 
   useEffect(() => {
     fetchData()
   }, [])
+
+  useEffect(() => {
+    if (!isAuthenticated) return
+    fetchChallengeCount()
+    const interval = setInterval(fetchChallengeCount, 30000)
+    return () => clearInterval(interval)
+  }, [isAuthenticated, fetchChallengeCount])
 
   const fetchData = async () => {
     try {
@@ -41,6 +61,7 @@ function Dashboard() {
   const handleGameCreated = () => {
     setRefreshKey((prev) => prev + 1)
     fetchData()
+    setShowGameForm(false)
   }
 
   const getMedalEmoji = (rank) => {
@@ -72,110 +93,165 @@ function Dashboard() {
         )}
       </header>
 
-      {/* 0. CHALLENGES */}
-      {isAuthenticated && (
-        <section className="section">
-          <h2 className="section-title">
+      {/* Tab Navigation */}
+      <div className="tab-nav">
+        <button
+          className={`tab-btn ${activeTab === 'leaderboard' ? 'active' : ''}`}
+          onClick={() => setActiveTab('leaderboard')}
+        >
+          Leaderboard
+        </button>
+        <button
+          className={`tab-btn ${activeTab === 'statistics' ? 'active' : ''}`}
+          onClick={() => setActiveTab('statistics')}
+        >
+          Statistics
+        </button>
+        {isAuthenticated && (
+          <button
+            className={`tab-btn ${activeTab === 'challenges' ? 'active' : ''}`}
+            onClick={() => setActiveTab('challenges')}
+          >
             Challenges
             {pendingChallengeCount > 0 && (
               <span className="challenge-badge">{pendingChallengeCount}</span>
             )}
-          </h2>
+          </button>
+        )}
+      </div>
+
+      {/* Tab Content */}
+      {activeTab === 'leaderboard' && (
+        <>
+          {/* LEADERBOARD */}
+          <section className="section">
+            <h2 className="section-title">Leaderboard</h2>
+            <div className="card">
+              {players.length === 0 ? (
+                <p className="empty-state">No players yet. Add players to get started!</p>
+              ) : (
+                <div className="leaderboard-table">
+                  <div className="leaderboard-table-header">
+                    <span className="col-rank">Rank</span>
+                    <span className="col-player">Player</span>
+                    <span className="col-elo">ELO</span>
+                    <span className="col-games">Games</span>
+                    <span className="col-record">W-L</span>
+                    <span className="col-winrate">Win%</span>
+                  </div>
+                  <div className="leaderboard-table-body">
+                    {players.map((player, index) => {
+                      const rank = index + 1
+                      return (
+                        <div key={player.id} className={`leaderboard-row ${rank <= 3 ? 'top-three' : ''}`}>
+                          <div className="col-rank">
+                            <span className="rank-badge">{getMedalEmoji(rank)}</span>
+                          </div>
+                          <div className="col-player">
+                            <span className="player-name">{player.name}</span>
+                          </div>
+                          <div className="col-elo">
+                            <span className="elo-value">{Math.round(player.current_elo)}</span>
+                          </div>
+                          <div className="col-games">
+                            <span className="text-secondary">{player.games_played}</span>
+                          </div>
+                          <div className="col-record">
+                            <span className="wins">{player.wins}</span>
+                            <span className="separator">-</span>
+                            <span className="losses">{player.losses}</span>
+                          </div>
+                          <div className="col-winrate">
+                            {player.games_played > 0 ? (
+                              <span className="winrate-badge">{player.win_rate}%</span>
+                            ) : (
+                              <span className="text-secondary">N/A</span>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          </section>
+
+          {/* MATCH HISTORY */}
+          <section className="section">
+            <h2 className="section-title">Match History</h2>
+            <GameHistory key={`history-${refreshKey}`} />
+          </section>
+        </>
+      )}
+
+      {activeTab === 'statistics' && (
+        <>
+          {players.length > 0 ? (
+            <section className="section">
+              <h2 className="section-title">Player Statistics</h2>
+              <div className="card player-selector-card">
+                <label className="form-label">Select Player</label>
+                <select
+                  value={selectedPlayerId || ''}
+                  onChange={(e) => setSelectedPlayerId(Number(e.target.value))}
+                  className="form-select"
+                >
+                  {players.map((player) => (
+                    <option key={player.id} value={player.id}>
+                      {player.name} (ELO: {Math.round(player.current_elo)})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {selectedPlayerId && (
+                <>
+                  <PlayerStats key={`stats-${selectedPlayerId}`} playerId={selectedPlayerId} />
+                  <EloChart key={`chart-${selectedPlayerId}`} playerId={selectedPlayerId} />
+                </>
+              )}
+            </section>
+          ) : (
+            <section className="section">
+              <p className="empty-state">No players yet. Play some games to see statistics!</p>
+            </section>
+          )}
+        </>
+      )}
+
+      {activeTab === 'challenges' && isAuthenticated && (
+        <section className="section">
+          <h2 className="section-title">Challenges</h2>
           <ChallengePanel onChallengeCountChange={setPendingChallengeCount} />
         </section>
       )}
 
-      {/* 1. GAME ENTRY */}
-      <section className="section">
-        <h2 className="section-title">Record Match</h2>
-        <GameForm key={`form-${refreshKey}`} onGameCreated={handleGameCreated} />
-      </section>
+      {/* Floating Action Button */}
+      <button
+        className={`fab ${showGameForm ? 'fab-active' : ''}`}
+        onClick={() => setShowGameForm(!showGameForm)}
+        title="Record Match"
+      >
+        {showGameForm ? '✕' : '+'}
+      </button>
 
-      {/* 2. LEADERBOARD */}
-      <section className="section">
-        <h2 className="section-title">Leaderboard</h2>
-        <div className="card">
-          {players.length === 0 ? (
-            <p className="empty-state">No players yet. Add players to get started!</p>
-          ) : (
-            <div className="leaderboard-table">
-              <div className="leaderboard-table-header">
-                <span className="col-rank">Rank</span>
-                <span className="col-player">Player</span>
-                <span className="col-elo">ELO</span>
-                <span className="col-games">Games</span>
-                <span className="col-record">W-L</span>
-                <span className="col-winrate">Win%</span>
-              </div>
-              <div className="leaderboard-table-body">
-                {players.map((player, index) => {
-                  const rank = index + 1
-                  return (
-                    <div key={player.id} className={`leaderboard-row ${rank <= 3 ? 'top-three' : ''}`}>
-                      <div className="col-rank">
-                        <span className="rank-badge">{getMedalEmoji(rank)}</span>
-                      </div>
-                      <div className="col-player">
-                        <span className="player-name">{player.name}</span>
-                      </div>
-                      <div className="col-elo">
-                        <span className="elo-value">{Math.round(player.current_elo)}</span>
-                      </div>
-                      <div className="col-games">
-                        <span className="text-secondary">{player.games_played}</span>
-                      </div>
-                      <div className="col-record">
-                        <span className="wins">{player.wins}</span>
-                        <span className="separator">-</span>
-                        <span className="losses">{player.losses}</span>
-                      </div>
-                      <div className="col-winrate">
-                        {player.games_played > 0 ? (
-                          <span className="winrate-badge">{player.win_rate}%</span>
-                        ) : (
-                          <span className="text-secondary">N/A</span>
-                        )}
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
+      {/* Game Form Modal */}
+      {showGameForm && (
+        <div className="game-form-overlay" onClick={() => setShowGameForm(false)}>
+          <div className="game-form-modal" onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-md)' }}>
+              <h2 className="section-title">Record Match</h2>
+              <button
+                className="btn btn-outline"
+                onClick={() => setShowGameForm(false)}
+                style={{ padding: '4px 12px' }}
+              >
+                ✕
+              </button>
             </div>
-          )}
-        </div>
-      </section>
-
-      {/* 3. MATCH HISTORY */}
-      <section className="section">
-        <h2 className="section-title">Match History</h2>
-        <GameHistory key={`history-${refreshKey}`} />
-      </section>
-
-      {/* 4. PLAYER STATISTICS */}
-      {players.length > 0 && (
-        <section className="section">
-          <h2 className="section-title">Player Statistics</h2>
-          <div className="card player-selector-card">
-            <label className="form-label">Select Player</label>
-            <select
-              value={selectedPlayerId || ''}
-              onChange={(e) => setSelectedPlayerId(Number(e.target.value))}
-              className="form-select"
-            >
-              {players.map((player) => (
-                <option key={player.id} value={player.id}>
-                  {player.name} (ELO: {Math.round(player.current_elo)})
-                </option>
-              ))}
-            </select>
+            <GameForm key={`form-${refreshKey}`} onGameCreated={handleGameCreated} />
           </div>
-          {selectedPlayerId && (
-            <>
-              <PlayerStats key={`stats-${selectedPlayerId}`} playerId={selectedPlayerId} />
-              <EloChart key={`chart-${selectedPlayerId}`} playerId={selectedPlayerId} />
-            </>
-          )}
-        </section>
+        </div>
       )}
     </div>
   )
