@@ -57,6 +57,43 @@ router.post('/', (req, res) => {
   }
 });
 
+// GET /api/players/elo-history/all - Get ELO progression for all players
+router.get('/elo-history/all', (req, res) => {
+  try {
+    const players = db.prepare(`
+      SELECT id, name, created_at FROM players WHERE games_played > 0
+    `).all();
+
+    const result = players.map(player => {
+      const history = db.prepare(`
+        SELECT
+          played_at,
+          CASE
+            WHEN player1_id = ? THEN player1_elo_after
+            ELSE player2_elo_after
+          END as elo_rating
+        FROM games
+        WHERE player1_id = ? OR player2_id = ?
+        ORDER BY played_at ASC
+      `).all(player.id, player.id, player.id);
+
+      return {
+        id: player.id,
+        name: player.name,
+        history: [
+          { played_at: player.created_at, elo_rating: INITIAL_RATING },
+          ...history
+        ]
+      };
+    });
+
+    res.json(result);
+  } catch (error) {
+    console.error('Error fetching all ELO histories:', error);
+    res.status(500).json({ error: 'Failed to fetch ELO histories' });
+  }
+});
+
 // GET /api/players/:id - Get specific player
 router.get('/:id', (req, res) => {
   try {

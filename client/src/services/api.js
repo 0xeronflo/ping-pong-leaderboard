@@ -25,6 +25,7 @@ export const playersApi = {
   getById: (id) => apiCall(`/players/${id}`),
   getStats: (id) => apiCall(`/players/${id}/stats`),
   getEloHistory: (id) => apiCall(`/players/${id}/elo-history`),
+  getAllEloHistory: () => apiCall('/players/elo-history/all'),
   create: (name) => apiCall('/players', {
     method: 'POST',
     body: JSON.stringify({ name }),

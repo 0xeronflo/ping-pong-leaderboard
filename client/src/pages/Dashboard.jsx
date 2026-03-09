@@ -7,6 +7,7 @@ import GameHistory from '../components/GameHistory'
 import PlayerStats from '../components/PlayerStats'
 import EloChart from '../components/EloChart'
 import ChallengePanel from '../components/ChallengePanel'
+import LeaderboardChart from '../components/LeaderboardChart'
 import '../styles/dashboard.css'
 
 function Dashboard() {
@@ -86,11 +87,17 @@ function Dashboard() {
       {/* Header */}
       <header className="dashboard-header">
         <h1 className="brand-name">🏓 Office Pong</h1>
-        {isAuthenticated && (
-          <nav className="header-nav">
+        <nav className="header-nav">
+          <button
+            className="btn btn-dark record-match-btn"
+            onClick={() => setShowGameForm(true)}
+          >
+            + Record Match
+          </button>
+          {isAuthenticated && (
             <Link to="/account" className="btn btn-outline">Account</Link>
-          </nav>
-        )}
+          )}
+        </nav>
       </header>
 
       {/* Tab Navigation */}
@@ -100,6 +107,12 @@ function Dashboard() {
           onClick={() => setActiveTab('leaderboard')}
         >
           Leaderboard
+        </button>
+        <button
+          className={`tab-btn ${activeTab === 'history' ? 'active' : ''}`}
+          onClick={() => setActiveTab('history')}
+        >
+          History
         </button>
         <button
           className={`tab-btn ${activeTab === 'statistics' ? 'active' : ''}`}
@@ -123,9 +136,15 @@ function Dashboard() {
       {/* Tab Content */}
       {activeTab === 'leaderboard' && (
         <>
-          {/* LEADERBOARD */}
+          {/* ELO PROGRESSION CHART */}
           <section className="section">
-            <h2 className="section-title">Leaderboard</h2>
+            <h2 className="section-title">ELO Progression</h2>
+            <LeaderboardChart key={`chart-${refreshKey}`} />
+          </section>
+
+          {/* LEADERBOARD TABLE */}
+          <section className="section">
+            <h2 className="section-title">Rankings</h2>
             <div className="card">
               {players.length === 0 ? (
                 <p className="empty-state">No players yet. Add players to get started!</p>
@@ -176,13 +195,14 @@ function Dashboard() {
               )}
             </div>
           </section>
-
-          {/* MATCH HISTORY */}
-          <section className="section">
-            <h2 className="section-title">Match History</h2>
-            <GameHistory key={`history-${refreshKey}`} />
-          </section>
         </>
+      )}
+
+      {activeTab === 'history' && (
+        <section className="section">
+          <h2 className="section-title">Match History</h2>
+          <GameHistory key={`history-${refreshKey}`} />
+        </section>
       )}
 
       {activeTab === 'statistics' && (
@@ -226,13 +246,13 @@ function Dashboard() {
         </section>
       )}
 
-      {/* Floating Action Button */}
+      {/* Mobile FAB (visible only on small screens where header button is hidden) */}
       <button
-        className={`fab ${showGameForm ? 'fab-active' : ''}`}
-        onClick={() => setShowGameForm(!showGameForm)}
+        className="fab"
+        onClick={() => setShowGameForm(true)}
         title="Record Match"
       >
-        {showGameForm ? '✕' : '+'}
+        +
       </button>
 
       {/* Game Form Modal */}
