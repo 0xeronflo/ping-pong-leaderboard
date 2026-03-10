@@ -5,7 +5,30 @@ import { requireAuth } from '../middleware/auth.js'
 const router = express.Router()
 
 /**
- * POST /api/scheduling — Create a table reservation (invite opponent)
+ * GET /api/scheduling/today — Public: Get all confirmed + pending reservations for today
+ */
+router.get('/today', (req, res) => {
+  try {
+    const reservations = db.prepare(`
+      SELECT r.scheduled_time, r.status,
+        p1.name as creator_name, p2.name as opponent_name
+      FROM reservations r
+      JOIN players p1 ON r.creator_id = p1.id
+      JOIN players p2 ON r.opponent_id = p2.id
+      WHERE date(r.scheduled_time) = date('now')
+        AND r.status IN ('pending', 'confirmed')
+      ORDER BY r.scheduled_time ASC
+    `).all()
+
+    res.json(reservations)
+  } catch (error) {
+    console.error('Error fetching today schedule:', error)
+    res.status(500).json({ error: 'Failed to fetch schedule' })
+  }
+})
+
+/**
+ * POST /api/scheduling — Create a table reservation (invite opponent, today only, 15-min slots)
  */
 router.post('/', requireAuth, (req, res) => {
   try {
@@ -22,8 +45,21 @@ router.post('/', requireAuth, (req, res) => {
     if (isNaN(scheduledDate.getTime())) {
       return res.status(400).json({ error: 'Invalid date/time' })
     }
+
+    // Must be in the future
     if (scheduledDate <= new Date()) {
       return res.status(400).json({ error: 'Scheduled time must be in the future' })
+    }
+
+    // Must be today
+    const now = new Date()
+    if (scheduledDate.toDateString() !== now.toDateString()) {
+      return res.status(400).json({ error: 'You can only book slots for today' })
+    }
+
+    // Must be on a 15-minute boundary
+    if (scheduledDate.getMinutes() % 15 !== 0 || scheduledDate.getSeconds() !== 0) {
+      return res.status(400).json({ error: 'Time must be on a 15-minute slot (e.g. 9:00, 9:15, 9:30, 9:45)' })
     }
 
     const userPlayer = db.prepare('SELECT id FROM players WHERE user_id = ?').get(req.user.id)
@@ -40,15 +76,15 @@ router.post('/', requireAuth, (req, res) => {
       return res.status(404).json({ error: 'Opponent not found' })
     }
 
-    // Block duplicate pending reservations with same opponent at same time
-    const existing = db.prepare(`
+    // Check if this time slot is already taken (pending or confirmed)
+    const slotTaken = db.prepare(`
       SELECT id FROM reservations
-      WHERE creator_id = ? AND opponent_id = ? AND scheduled_time = ?
-        AND status = 'pending'
-    `).get(userPlayer.id, opponent_id, scheduledDate.toISOString())
+      WHERE scheduled_time = ?
+        AND status IN ('pending', 'confirmed')
+    `).get(scheduledDate.toISOString())
 
-    if (existing) {
-      return res.status(409).json({ error: 'You already have a pending reservation with this player at this time' })
+    if (slotTaken) {
+      return res.status(409).json({ error: 'This time slot is already booked' })
     }
 
     const result = db.prepare(`
@@ -72,7 +108,7 @@ router.post('/', requireAuth, (req, res) => {
 })
 
 /**
- * GET /api/scheduling — Get my reservations (sent and received, pending + confirmed upcoming)
+ * GET /api/scheduling — Get my reservations for today (sent, received, confirmed)
  */
 router.get('/', requireAuth, (req, res) => {
   try {
@@ -81,7 +117,6 @@ router.get('/', requireAuth, (req, res) => {
       return res.json({ sent: [], received: [], confirmed: [] })
     }
 
-    // Pending invitations I sent
     const sent = db.prepare(`
       SELECT r.*, p1.name as creator_name, p2.name as opponent_name
       FROM reservations r
@@ -89,11 +124,11 @@ router.get('/', requireAuth, (req, res) => {
       JOIN players p2 ON r.opponent_id = p2.id
       WHERE r.creator_id = ?
         AND r.status = 'pending'
+        AND date(r.scheduled_time) = date('now')
         AND r.scheduled_time > datetime('now')
       ORDER BY r.scheduled_time ASC
     `).all(userPlayer.id)
 
-    // Pending invitations I received
     const received = db.prepare(`
       SELECT r.*, p1.name as creator_name, p2.name as opponent_name
       FROM reservations r
@@ -101,11 +136,11 @@ router.get('/', requireAuth, (req, res) => {
       JOIN players p2 ON r.opponent_id = p2.id
       WHERE r.opponent_id = ?
         AND r.status = 'pending'
+        AND date(r.scheduled_time) = date('now')
         AND r.scheduled_time > datetime('now')
       ORDER BY r.scheduled_time ASC
     `).all(userPlayer.id)
 
-    // Confirmed upcoming reservations (where I'm either creator or opponent)
     const confirmed = db.prepare(`
       SELECT r.*, p1.name as creator_name, p2.name as opponent_name
       FROM reservations r
@@ -113,6 +148,7 @@ router.get('/', requireAuth, (req, res) => {
       JOIN players p2 ON r.opponent_id = p2.id
       WHERE (r.creator_id = ? OR r.opponent_id = ?)
         AND r.status = 'confirmed'
+        AND date(r.scheduled_time) = date('now')
         AND r.scheduled_time > datetime('now')
       ORDER BY r.scheduled_time ASC
     `).all(userPlayer.id, userPlayer.id)
@@ -180,7 +216,7 @@ router.patch('/:id', requireAuth, (req, res) => {
 })
 
 /**
- * DELETE /api/scheduling/:id — Cancel a reservation (creator only)
+ * DELETE /api/scheduling/:id — Cancel a reservation
  */
 router.delete('/:id', requireAuth, (req, res) => {
   try {
@@ -195,7 +231,6 @@ router.delete('/:id', requireAuth, (req, res) => {
       return res.status(404).json({ error: 'Reservation not found' })
     }
 
-    // Allow cancellation by either the creator or the opponent
     if (reservation.creator_id !== userPlayer.id && reservation.opponent_id !== userPlayer.id) {
       return res.status(403).json({ error: 'You can only cancel your own reservations' })
     }

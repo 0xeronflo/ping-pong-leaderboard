@@ -60,6 +60,7 @@ export const challengesApi = {
 // Scheduling API
 export const schedulingApi = {
   getAll: () => apiCall('/scheduling'),
+  getToday: () => apiCall('/scheduling/today'),
   create: (opponent_id, scheduled_time) => apiCall('/scheduling', {
     method: 'POST',
     body: JSON.stringify({ opponent_id, scheduled_time }),

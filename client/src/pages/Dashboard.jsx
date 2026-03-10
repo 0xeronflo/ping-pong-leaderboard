@@ -120,17 +120,15 @@ function Dashboard() {
         >
           Statistics
         </button>
-        {isAuthenticated && (
-          <button
-            className={`tab-btn ${activeTab === 'schedule' ? 'active' : ''}`}
-            onClick={() => setActiveTab('schedule')}
-          >
-            Schedule
-            {pendingInviteCount > 0 && (
-              <span className="challenge-badge">{pendingInviteCount}</span>
-            )}
-          </button>
-        )}
+        <button
+          className={`tab-btn ${activeTab === 'schedule' ? 'active' : ''}`}
+          onClick={() => setActiveTab('schedule')}
+        >
+          Schedule
+          {pendingInviteCount > 0 && (
+            <span className="challenge-badge">{pendingInviteCount}</span>
+          )}
+        </button>
       </div>
 
       {/* Tab Content */}
@@ -239,7 +237,7 @@ function Dashboard() {
         </>
       )}
 
-      {activeTab === 'schedule' && isAuthenticated && (
+      {activeTab === 'schedule' && (
         <section className="section">
           <h2 className="section-title">Schedule</h2>
           <SchedulingPanel onPendingCountChange={setPendingInviteCount} />

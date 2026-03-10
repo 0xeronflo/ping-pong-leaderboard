@@ -1423,6 +1423,64 @@
   color: #10B981;
 }
 
+/* Time Slot Grid */
+.time-slot-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 6px;
+}
+
+.time-slot {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-light);
+  background: var(--bg-body);
+  transition: all 0.15s ease;
+}
+
+.time-slot-available {
+  cursor: pointer;
+}
+
+.time-slot-available:hover {
+  border-color: var(--text-main);
+  background: var(--bg-surface-light);
+}
+
+.time-slot-confirmed {
+  border-color: #10B981;
+  background: rgba(16, 185, 129, 0.06);
+}
+
+.time-slot-pending {
+  border-color: #F59E0B;
+  background: rgba(245, 158, 11, 0.06);
+}
+
+.time-slot-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.time-slot-info {
+  font-size: 11px;
+  color: #10B981;
+  font-weight: 500;
+  margin-top: 2px;
+}
+
+.time-slot-info-pending {
+  color: #F59E0B;
+}
+
+.time-slot-info-open {
+  color: var(--text-secondary);
+  font-weight: 400;
+}
+
 @media (max-width: 600px) {
   .challenge-item {
     flex-direction: column;
@@ -1436,5 +1494,9 @@
 
   .challenge-item .btn {
     flex: 1;
+  }
+
+  .time-slot-grid {
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
   }
 }
