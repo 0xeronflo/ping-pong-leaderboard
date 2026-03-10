@@ -2,10 +2,10 @@ import { useState, useEffect, useCallback } from 'react'
 import { playersApi, schedulingApi } from '../services/api'
 import { useAuth } from '../contexts/AuthContext'
 
-// Generate 15-min time slots from 8:00 AM to 8:00 PM
+// Generate 15-min time slots from 5:00 PM to 8:00 PM
 function generateTimeSlots() {
   const slots = []
-  for (let h = 8; h < 20; h++) {
+  for (let h = 17; h < 20; h++) {
     for (let m = 0; m < 60; m += 15) {
       const hour = h.toString().padStart(2, '0')
       const min = m.toString().padStart(2, '0')
