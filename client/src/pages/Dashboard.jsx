@@ -1,12 +1,12 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
-import { playersApi, challengesApi } from '../services/api'
+import { playersApi, schedulingApi } from '../services/api'
 import { useAuth } from '../contexts/AuthContext'
 import GameForm from '../components/GameForm'
 import GameHistory from '../components/GameHistory'
 import PlayerStats from '../components/PlayerStats'
 import EloChart from '../components/EloChart'
-import ChallengePanel from '../components/ChallengePanel'
+import SchedulingPanel from '../components/SchedulingPanel'
 import LeaderboardChart from '../components/LeaderboardChart'
 import '../styles/dashboard.css'
 
@@ -16,16 +16,16 @@ function Dashboard() {
   const [selectedPlayerId, setSelectedPlayerId] = useState(null)
   const [refreshKey, setRefreshKey] = useState(0)
   const [loading, setLoading] = useState(true)
-  const [pendingChallengeCount, setPendingChallengeCount] = useState(0)
+  const [pendingInviteCount, setPendingInviteCount] = useState(0)
   const [activeTab, setActiveTab] = useState('leaderboard')
   const [showGameForm, setShowGameForm] = useState(false)
 
-  // Poll challenge count even when not on challenges tab
-  const fetchChallengeCount = useCallback(async () => {
+  // Poll pending invite count even when not on schedule tab
+  const fetchPendingCount = useCallback(async () => {
     if (!isAuthenticated) return
     try {
-      const data = await challengesApi.getAll()
-      setPendingChallengeCount(data.received.length)
+      const data = await schedulingApi.getAll()
+      setPendingInviteCount(data.received.length)
     } catch (err) {
       // silently ignore
     }
@@ -37,10 +37,10 @@ function Dashboard() {
 
   useEffect(() => {
     if (!isAuthenticated) return
-    fetchChallengeCount()
-    const interval = setInterval(fetchChallengeCount, 30000)
+    fetchPendingCount()
+    const interval = setInterval(fetchPendingCount, 30000)
     return () => clearInterval(interval)
-  }, [isAuthenticated, fetchChallengeCount])
+  }, [isAuthenticated, fetchPendingCount])
 
   const fetchData = async () => {
     try {
@@ -122,12 +122,12 @@ function Dashboard() {
         </button>
         {isAuthenticated && (
           <button
-            className={`tab-btn ${activeTab === 'challenges' ? 'active' : ''}`}
-            onClick={() => setActiveTab('challenges')}
+            className={`tab-btn ${activeTab === 'schedule' ? 'active' : ''}`}
+            onClick={() => setActiveTab('schedule')}
           >
-            Challenges
-            {pendingChallengeCount > 0 && (
-              <span className="challenge-badge">{pendingChallengeCount}</span>
+            Schedule
+            {pendingInviteCount > 0 && (
+              <span className="challenge-badge">{pendingInviteCount}</span>
             )}
           </button>
         )}
@@ -239,10 +239,10 @@ function Dashboard() {
         </>
       )}
 
-      {activeTab === 'challenges' && isAuthenticated && (
+      {activeTab === 'schedule' && isAuthenticated && (
         <section className="section">
-          <h2 className="section-title">Challenges</h2>
-          <ChallengePanel onChallengeCountChange={setPendingChallengeCount} />
+          <h2 className="section-title">Schedule</h2>
+          <SchedulingPanel onPendingCountChange={setPendingInviteCount} />
         </section>
       )}
 

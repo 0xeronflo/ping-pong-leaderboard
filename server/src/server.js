@@ -5,6 +5,7 @@ import cookieParser from 'cookie-parser';
 import playersRouter from './routes/players.js';
 import gamesRouter from './routes/games.js';
 import challengesRouter from './routes/challenges.js';
+import schedulingRouter from './routes/scheduling.js';
 import authRouter from './routes/auth.js';
 import { runMigrations } from './db/migrate.js';
 
@@ -55,6 +56,7 @@ app.use('/api/auth', authRouter);
 app.use('/api/players', playersRouter);
 app.use('/api/games', gamesRouter);
 app.use('/api/challenges', challengesRouter);
+app.use('/api/scheduling', schedulingRouter);
 
 // 404 handler
 app.use((req, res) => {

@@ -57,6 +57,22 @@ export const challengesApi = {
   }),
 };
 
+// Scheduling API
+export const schedulingApi = {
+  getAll: () => apiCall('/scheduling'),
+  create: (opponent_id, scheduled_time) => apiCall('/scheduling', {
+    method: 'POST',
+    body: JSON.stringify({ opponent_id, scheduled_time }),
+  }),
+  respond: (id, action) => apiCall(`/scheduling/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ action }),
+  }),
+  cancel: (id) => apiCall(`/scheduling/${id}`, {
+    method: 'DELETE',
+  }),
+};
+
 // Games API
 export const gamesApi = {
   getAll: (limit = 50, offset = 0) => apiCall(`/games?limit=${limit}&offset=${offset}`),
