@@ -42,6 +42,20 @@ export const authApi = {
     method: 'PUT',
     body: JSON.stringify({ currentPassword, newPassword }),
   }),
+  uploadAvatar: async (file) => {
+    const formData = new FormData()
+    formData.append('avatar', file)
+    const response = await fetch(`${API_BASE_URL}/auth/avatar`, {
+      method: 'POST',
+      credentials: 'include',
+      body: formData,
+    })
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: 'Upload failed' }))
+      throw new Error(error.error || 'Upload failed')
+    }
+    return response.json()
+  },
 };
 
 // Challenges API

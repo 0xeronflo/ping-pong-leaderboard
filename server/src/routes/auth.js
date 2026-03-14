@@ -1,8 +1,35 @@
 import express from 'express'
+import multer from 'multer'
+import path from 'path'
+import { mkdirSync } from 'fs'
 import db from '../db/database.js'
 import { hashPassword, comparePassword, generateToken } from '../services/auth.js'
 import { requireAuth } from '../middleware/auth.js'
 import { INITIAL_RATING } from '../services/elo.js'
+
+// Set up avatar upload directory
+const uploadDir = path.join(process.cwd(), 'data', 'avatars')
+try { mkdirSync(uploadDir, { recursive: true }) } catch (e) { /* exists */ }
+
+const upload = multer({
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => cb(null, uploadDir),
+    filename: (req, file, cb) => {
+      const ext = path.extname(file.originalname).toLowerCase()
+      cb(null, `player-${req.user.id}-${Date.now()}${ext}`)
+    }
+  }),
+  limits: { fileSize: 2 * 1024 * 1024 }, // 2MB
+  fileFilter: (req, file, cb) => {
+    const allowed = ['.jpg', '.jpeg', '.png', '.webp']
+    const ext = path.extname(file.originalname).toLowerCase()
+    if (allowed.includes(ext)) {
+      cb(null, true)
+    } else {
+      cb(new Error('Only .jpg, .jpeg, .png, and .webp files are allowed'))
+    }
+  }
+})
 
 const router = express.Router()
 
@@ -87,6 +114,7 @@ router.post('/register', async (req, res) => {
         username,
         playerId,
         playerName,
+        avatarUrl: null,
       },
     })
   } catch (error) {
@@ -124,7 +152,7 @@ router.post('/login', async (req, res) => {
     }
 
     // Get player info
-    const player = db.prepare('SELECT id, name FROM players WHERE user_id = ?').get(user.id)
+    const player = db.prepare('SELECT id, name, avatar_url FROM players WHERE user_id = ?').get(user.id)
 
     // Generate token
     const token = generateToken({ id: user.id, username: user.username })
@@ -144,6 +172,7 @@ router.post('/login', async (req, res) => {
         username: user.username,
         playerId: player?.id || null,
         playerName: player?.name || null,
+        avatarUrl: player?.avatar_url || null,
       },
     })
   } catch (error) {
@@ -170,7 +199,7 @@ router.get('/me', requireAuth, (req, res) => {
     // Use db from import
 
     // Get player info
-    const player = db.prepare('SELECT id, name FROM players WHERE user_id = ?').get(req.user.id)
+    const player = db.prepare('SELECT id, name, avatar_url FROM players WHERE user_id = ?').get(req.user.id)
 
     res.json({
       user: {
@@ -178,6 +207,7 @@ router.get('/me', requireAuth, (req, res) => {
         username: req.user.username,
         playerId: player?.id || null,
         playerName: player?.name || null,
+        avatarUrl: player?.avatar_url || null,
       },
     })
   } catch (error) {
@@ -210,7 +240,7 @@ router.patch('/me', requireAuth, (req, res) => {
 
     db.prepare('UPDATE players SET name = ? WHERE user_id = ?').run(playerName, req.user.id)
 
-    const player = db.prepare('SELECT id, name FROM players WHERE user_id = ?').get(req.user.id)
+    const player = db.prepare('SELECT id, name, avatar_url FROM players WHERE user_id = ?').get(req.user.id)
 
     res.json({
       user: {
@@ -218,12 +248,55 @@ router.patch('/me', requireAuth, (req, res) => {
         username: req.user.username,
         playerId: player?.id || null,
         playerName: player?.name || null,
+        avatarUrl: player?.avatar_url || null,
       },
     })
   } catch (error) {
     console.error('Update player name error:', error)
     res.status(500).json({ error: 'Failed to update player name' })
   }
+})
+
+/**
+ * POST /api/auth/avatar
+ * Upload profile photo
+ */
+router.post('/avatar', requireAuth, (req, res) => {
+  upload.single('avatar')(req, res, (err) => {
+    if (err) {
+      if (err instanceof multer.MulterError) {
+        if (err.code === 'LIMIT_FILE_SIZE') {
+          return res.status(400).json({ error: 'File must be under 2MB' })
+        }
+        return res.status(400).json({ error: err.message })
+      }
+      return res.status(400).json({ error: err.message })
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' })
+    }
+
+    try {
+      const avatarUrl = `/uploads/avatars/${req.file.filename}`
+      db.prepare('UPDATE players SET avatar_url = ? WHERE user_id = ?').run(avatarUrl, req.user.id)
+
+      const player = db.prepare('SELECT id, name, avatar_url FROM players WHERE user_id = ?').get(req.user.id)
+
+      res.json({
+        user: {
+          id: req.user.id,
+          username: req.user.username,
+          playerId: player?.id || null,
+          playerName: player?.name || null,
+          avatarUrl: player?.avatar_url || null,
+        },
+      })
+    } catch (error) {
+      console.error('Avatar upload error:', error)
+      res.status(500).json({ error: 'Failed to save avatar' })
+    }
+  })
 })
 
 /**

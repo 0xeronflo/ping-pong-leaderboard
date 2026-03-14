@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
+import path from 'path';
 import playersRouter from './routes/players.js';
 import gamesRouter from './routes/games.js';
 import challengesRouter from './routes/challenges.js';
@@ -45,6 +46,9 @@ app.use((req, res, next) => {
   console.log(`${req.method} ${req.path}`);
   next();
 });
+
+// Serve uploaded files (avatars)
+app.use('/uploads', express.static(path.join(process.cwd(), 'data')));
 
 // Health check endpoint
 app.get('/health', (req, res) => {

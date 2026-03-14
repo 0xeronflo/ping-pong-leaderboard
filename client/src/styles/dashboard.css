@@ -1481,6 +1481,61 @@
   font-weight: 400;
 }
 
+/* Avatars */
+.avatar {
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.avatar-sm {
+  width: 28px;
+  height: 28px;
+}
+
+.avatar-lg {
+  width: 72px;
+  height: 72px;
+}
+
+.avatar-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-surface-dark);
+  color: var(--text-inverse);
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.avatar-placeholder.avatar-lg {
+  font-size: 28px;
+}
+
+.avatar-upload {
+  position: relative;
+  cursor: pointer;
+}
+
+.avatar-overlay {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.avatar-upload:hover .avatar-overlay {
+  opacity: 1;
+}
+
 @media (max-width: 600px) {
   .challenge-item {
     flex-direction: column;

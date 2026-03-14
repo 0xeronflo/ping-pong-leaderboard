@@ -1,12 +1,18 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { authApi } from '../services/api'
+import { getAvatarUrl } from '../utils/avatar'
 import '../styles/dashboard.css'
 
 function Account() {
-  const { user, isAuthenticated, updatePlayerName, logout } = useAuth()
+  const { user, isAuthenticated, updatePlayerName, updateAvatar, logout } = useAuth()
   const navigate = useNavigate()
+  const fileInputRef = useRef(null)
+
+  // Avatar state
+  const [avatarUploading, setAvatarUploading] = useState(false)
+  const [avatarError, setAvatarError] = useState(null)
 
   // Change name state
   const [newPlayerName, setNewPlayerName] = useState('')
@@ -21,6 +27,26 @@ function Account() {
   const [passwordChanging, setPasswordChanging] = useState(false)
   const [passwordError, setPasswordError] = useState(null)
   const [passwordSuccess, setPasswordSuccess] = useState(false)
+
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click()
+  }
+
+  const handleAvatarChange = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setAvatarError(null)
+    try {
+      setAvatarUploading(true)
+      await updateAvatar(file)
+    } catch (err) {
+      setAvatarError(err.message)
+    } finally {
+      setAvatarUploading(false)
+      // Reset input so same file can be re-selected
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
 
   const handleNameChange = async (e) => {
     e.preventDefault()
@@ -105,20 +131,47 @@ function Account() {
         <p className="page-subtitle">Manage your profile and settings</p>
       </div>
 
-      {/* Profile info */}
+      {/* Profile info with avatar */}
       <section className="section">
         <h2 className="section-title">Profile</h2>
         <div className="card">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 'var(--space-sm)', borderBottom: '1px solid var(--border-light)' }}>
-              <span style={{ fontSize: '12px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Username</span>
-              <span style={{ fontSize: '14px', fontWeight: 600 }}>{user?.username}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)', marginBottom: 'var(--space-md)' }}>
+            <div
+              className="avatar-upload"
+              onClick={handleAvatarClick}
+              style={{ position: 'relative', cursor: 'pointer' }}
+            >
+              {user?.avatarUrl ? (
+                <img
+                  src={getAvatarUrl(user.avatarUrl)}
+                  alt={user.playerName}
+                  className="avatar avatar-lg"
+                />
+              ) : (
+                <div className="avatar avatar-lg avatar-placeholder">
+                  {user?.playerName?.charAt(0)?.toUpperCase() || '?'}
+                </div>
+              )}
+              <div className="avatar-overlay">
+                {avatarUploading ? '...' : 'Edit'}
+              </div>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 'var(--space-sm)', borderBottom: '1px solid var(--border-light)' }}>
-              <span style={{ fontSize: '12px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Player Name</span>
-              <span style={{ fontSize: '14px', fontWeight: 600 }}>{user?.playerName}</span>
+            <div>
+              <div style={{ fontSize: '18px', fontWeight: 600 }}>{user?.playerName}</div>
+              <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>@{user?.username}</div>
             </div>
           </div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".jpg,.jpeg,.png,.webp"
+            onChange={handleAvatarChange}
+            style={{ display: 'none' }}
+          />
+          {avatarError && <div className="alert alert-error">{avatarError}</div>}
+          <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: 0 }}>
+            Click your photo to upload a new one. Max 2MB. JPG, PNG, or WebP.
+          </p>
         </div>
       </section>
 

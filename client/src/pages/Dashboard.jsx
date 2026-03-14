@@ -8,6 +8,7 @@ import PlayerStats from '../components/PlayerStats'
 import EloChart from '../components/EloChart'
 import SchedulingPanel from '../components/SchedulingPanel'
 import LeaderboardChart from '../components/LeaderboardChart'
+import { getAvatarUrl } from '../utils/avatar'
 import '../styles/dashboard.css'
 
 function Dashboard() {
@@ -164,7 +165,18 @@ function Dashboard() {
                           <div className="col-rank">
                             <span className="rank-badge">{getMedalEmoji(rank)}</span>
                           </div>
-                          <div className="col-player">
+                          <div className="col-player" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            {player.avatar_url ? (
+                              <img
+                                src={getAvatarUrl(player.avatar_url)}
+                                alt={player.name}
+                                className="avatar avatar-sm"
+                              />
+                            ) : (
+                              <div className="avatar avatar-sm avatar-placeholder">
+                                {player.name?.charAt(0)?.toUpperCase()}
+                              </div>
+                            )}
                             <span className="player-name">{player.name}</span>
                           </div>
                           <div className="col-elo">

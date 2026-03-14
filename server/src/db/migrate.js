@@ -6,6 +6,7 @@ import { migrate as mergeAsianmartyCobraGames } from './migrations/005_merge_asi
 import { migrate as recalculateEloPointDifferential } from './migrations/006_recalculate_elo_point_differential.js';
 import { migrate as addChallenges } from './migrations/007_add_challenges.js';
 import { migrate as addReservations } from './migrations/008_add_reservations.js';
+import { migrate as addPlayerAvatars } from './migrations/009_add_player_avatars.js';
 import db from './database.js';
 
 /**
@@ -41,7 +42,8 @@ export function runMigrations() {
     { name: '005_merge_asianmarty_cobra_games', fn: mergeAsianmartyCobraGames },
     { name: '006_recalculate_elo_point_differential', fn: recalculateEloPointDifferential },
     { name: '007_add_challenges', fn: addChallenges },
-    { name: '008_add_reservations', fn: addReservations }
+    { name: '008_add_reservations', fn: addReservations },
+    { name: '009_add_player_avatars', fn: addPlayerAvatars }
   ];
 
   // Run each migration if not already applied

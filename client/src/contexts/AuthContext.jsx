@@ -88,6 +88,12 @@ export function AuthProvider({ children }) {
     return data.user
   }
 
+  const updateAvatar = async (file) => {
+    const data = await authApi.uploadAvatar(file)
+    setUser(data.user)
+    return data.user
+  }
+
   const value = {
     user,
     loading,
@@ -95,6 +101,7 @@ export function AuthProvider({ children }) {
     login,
     logout,
     updatePlayerName,
+    updateAvatar,
     isAuthenticated: !!user,
   }
 

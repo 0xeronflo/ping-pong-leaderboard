@@ -15,6 +15,7 @@ router.get('/', (req, res) => {
         games_played,
         wins,
         losses,
+        avatar_url,
         CASE
           WHEN games_played > 0 THEN ROUND((wins * 100.0 / games_played), 1)
           ELSE 0
